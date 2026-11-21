@@ -123,11 +123,78 @@ SetWorkingDir    A_ScriptDir  ; set working folder to be the script's folder.
 
 <hr/>
 
-## better solutions.
+## slowness.
 
-if there is a Windows API for virtual-desktop,  
-that does that directly (not though a key combination),  
-I didn't find it. feel free to open a bug/feature request.  
+you'll see the immediate result, most likely right away,  
+but the program still waits until the entire 32 key events will finish,  
+which took about ~6 seconds.  
+if you have more than 32 desktops, you can re-run the tool.  
+
+- `Win + Ctrl + D` - create new desktop.
+- `Win + Ctrl + F4` - close current desktop.
+- `Win + Ctrl + ←/→` - cycle desktops.
+- `Alt + Tab` / `Win + Tab` - surf apps across all desktops (configurable).
+
+note: as far as I can tell, extra virtual-desktops by themselves are not the cause for low RAM or CPU spike,  
+the cause is often when you "loose" an applications in another desktop ;)
+
+<hr/>
+
+
+## alternative.
+
+if you want, you can use `autohotkey` instead of this program, you can even "compile" it to an exe.
+
+```autohotkey
+#Requires AutoHotkey v2.0
+
+^!q:: CloseExtraDesktops()  ; Press Ctrl+Alt+Q to start
+
+CloseExtraDesktops() {
+    loop 32 {
+        SendInput "{LWin down}{LCtrl down}{F4 down}{F4 up}{LCtrl up}{LWin up}"
+        Sleep 200
+    }
+}
+```
+
+or even simpler:
+
+```autohotkey
+^!q::Loop 32 {
+    Send "#^{F4}"
+    Sleep 200
+}
+```
+
+<hr/>
+
+## better solutions (in the future, and reasoning).
+
+There is no "close virtual-desktop" Windows API (yet).
+
+Microsoft documents `IVirtualDesktopManager`, a COM interface available since Windows 10.  
+It can tell you which desktop a window is on (`GetWindowDesktopId`),  
+whether a window is on the current desktop (`IsWindowOnCurrentVirtualDesktop`),  
+and even move a window to another desktop (`MoveWindowToDesktop`).  
+It is implemented by the `VirtualDesktopManager` class, created with `CoCreateInstance`.  
+
+It can't create, switch, or close desktops.  
+Microsoft's guidance is that creating and manipulating desktops is reserved for the user,  
+so the documented API doesn't offer that.  
+
+Closing a desktop (currently) only works through the undocumented internal interfaces that tools like PowerToys use,  
+which Microsoft doesn't support,  
+or through the keyboard shortcut.
+
+- https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ivirtualdesktopmanager
+- https://learn.microsoft.com/en-us/windows/win32/shell/virtualdesktopmanager
+- https://github.com/microsoft/PowerToys/issues/6797
+
+That's why your program simulates `Win+Ctrl+F4` with `SendInput`.  
+It's the only public "route" for closing a desktop.  
+
+- feel free to open a bug/feature request.  
 
 <hr/>
 <br/>
