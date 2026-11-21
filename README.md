@@ -1,10 +1,12 @@
-# close_virtual_desktop_win
+# `close_virtual_desktop_win`
+
+safely moves all opened applications across all virtual desktops to one desktop,  
+and close all other virtual-desktops, leaving you with just one desktop,  
+and all the opened applications and windows in it (same position).
 
 <img src="resources/logos/app.png" />
 
-<hr/>
-
-### 👇  download (direct URLs - latest release)
+## 👇  download (direct URLs - latest release)
 
 - [![](resources/logos/64.png)![](resources/logos/windows.png)x86_64-pc-windows-msvc.zip](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/x86_64-pc-windows-msvc.zip)
 - [![](resources/logos/aarch64.png)![](resources/logos/windows.png)aarch64-pc-windows-msvc.zip](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/aarch64-pc-windows-msvc.zip)
@@ -14,35 +16,41 @@
 
 <hr/>
 
-## the problem.
+### 😩 The Problem
 
-I tend to open multiple virtual-desktops by mistake.  
-opened apps are kept in another desktop, and I eventually open another copy.  
-this makes <kbd>ALT</kbd>+<kbd>TAB</kbd>/<kbd>WIN</kbd>+<kbd>TAB</kbd> laggy.  
+I tend to open multiple virtual desktops by mistake.  
+Opened apps are kept in another desktop, and I eventually open another copy. 📋📋  
+This makes <kbd>ALT</kbd>+<kbd>TAB</kbd> / <kbd>WIN</kbd>+<kbd>TAB</kbd> laggy. 🐌
 
 <hr/>
 
-# what this program does.
+### ✨ What This Program Does
+
+gradually (but very fast) it sends the hot-key combination to close the current virtual-desktop  
+(<kbd>WIN</kbd>+<kbd>CTRL</kbd>+<kbd>F4</kbd>) it does so blindly to the actual amount of opened virtual-desktops you currently have,  
+it is safe since it does nothing if you're only have one desktop left.  
+
+Windows itself handles everything. it moves all the windows and opened applications to the next recently opened desktop,  
+and closes the virtual-desktop. repeating this will eventually leave you with only one desktop,  
+and all you opened programs and windows, in same place.
+
+I've currently hard-coded 32 actions,  
+so if you have more opened virtual-desktops you need to re-run the program.
 
 <img src="resources/logos/screenshot_how_it_works.gif" />
 
-it sends a key-combination (<kbd>WIN</kbd>+<kbd>CTRL</kbd>+<kbd>F4</kbd>) 32 times,  
-it closes whatever desktop you are in, safely,  
-moving all opened programs to a previously opened desktop.  
-it does nothing if you are only having one desktop.  
-
-you can run it manually,  
-or as a scheduled-task.  
-
-but it must be as part of user interactive session (logged-in).
+you can set to run the program manually,  
+or use scheduled-tasks to run it every few hours or when idle (for example).
+this program is only used in normal desktop interactive mode (nothing like a remote console),  
+so if you choose to use scheduled-task, make sure to set it for a logged-on user.
 
 <hr/>
 
-## other, semi-working "tricks" I've tried..
+## 🧪 Other, Semi-Working "Tricks" I've Tried
 
-- keep the virtual-desktop button ("taskview") in the taskbar always, and check from time to time (takes up space).
+- 📌 Keep the virtual desktop button ("Task View") in the taskbar at all times, and check from time to time (takes up space).
 
-- try to disable it - registry (does nothing)
+- 🚫 Try to disable it via the registry (does nothing).
 
 ```reg
 Windows Registry Editor Version 5.00
@@ -53,7 +61,7 @@ Windows Registry Editor Version 5.00
 "Multimon"=dword:00000000
 ```
 
-- disable desktop creation hotkey (also disables every native `D` combination) - I've replaced it with AutoHotKey (kind of working).
+- ⌨️ Disable the desktop creation hotkey. This also disables every native `D` key combination. I've replaced it with AutoHotKey (kind of working). 🤏
 
 ```reg
 Windows Registry Editor Version 5.00
@@ -63,7 +71,7 @@ Windows Registry Editor Version 5.00
 "DisabledHotkeys"="D"
 ```
 
-- disable all antive win hotkey combination, and use AutoHotKey to set specific ones - (I've skipped this one, although it should be very effective).
+- 🔒 Disable all native Win hotkey combinations and use AutoHotKey to set specific ones. (I've skipped this one, although it should be very effective. 🤔)
 
 ```reg
 Windows Registry Editor Version 5.00
@@ -73,14 +81,16 @@ Windows Registry Editor Version 5.00
 "NoWinKeys"=dword:00000001
 ```
 
-- install a newer windows build just to have somewhat more control over the key combination (not really did much).
+- 🪟 Install a newer Windows build to have somewhat more control over the key combinations. (Not really much help. 😅)
 
 <img src="resources/logos/screenshot_system_multitasking.png" />
 
 <hr/>
 
-here is an example for AutoHotKey script that does desktop reveal, as well as opening the desktop of this an another computer,  
-it overrides the native key-combination so you don't have to worry about pre-disabling it (although it might work better if you do).  
+## 🤖 AutoHotKey Example
+
+Here is an example AutoHotKey script that reveals the desktop, and also opens the desktop of another computer. 🖥️↔️🖥️  
+It overrides the native key combination, so you don't have to worry about pre-disabling it (although it might work better if you do). 💪
 
 ```autohotkey
 #Requires AutoHotkey v2.0
@@ -133,27 +143,24 @@ SetWorkingDir    A_ScriptDir  ; set working folder to be the script's folder.
 
 <hr/>
 
-## slowness.
+## 🐢 Slowness
 
-you'll see the immediate result, most likely right away,  
-but the program still waits until the entire 32 key events will finish,  
-which took about ~6 seconds.  
-if you have more than 32 desktops, you can re-run the tool.  
+You'll see the immediate result, most likely right away. ⚡  
+However, the program still waits until all 32 key events finish, which takes about ~6 seconds. ⏳  
+If you have more than 32 desktops, you can re-run the tool. 🔁
 
-- `Win + Ctrl + D` - create new desktop.
-- `Win + Ctrl + F4` - close current desktop.
-- `Win + Ctrl + ←/→` - cycle desktops.
-- `Alt + Tab` / `Win + Tab` - surf apps across all desktops (configurable).
+- ➕ `Win + Ctrl + D`: create a new desktop.
+- ❌ `Win + Ctrl + F4`: close the current desktop.
+- ◀️▶️ `Win + Ctrl + ←/→`: cycle desktops.
+- 🔀 `Alt + Tab` / `Win + Tab`: surf apps across all desktops (configurable).
 
-note: as far as I can tell, extra virtual-desktops by themselves are not the cause for low RAM or CPU spike,  
-the cause is often when you "loose" an applications in another desktop ;)
+💡 Note: As far as I can tell, extra virtual desktops by themselves are not the cause of low RAM or CPU spikes. The cause is often when you "lose" an application in another desktop 👻
 
 <hr/>
 
+## 🛠️ Alternative
 
-## alternative.
-
-if you want, you can use `autohotkey` instead of this program, you can even "compile" it to an exe.
+If you want, you can use `autohotkey` instead of this program. You can even "compile" it to an `.exe` 📦.
 
 ```autohotkey
 #Requires AutoHotkey v2.0
@@ -168,7 +175,7 @@ CloseExtraDesktops() {
 }
 ```
 
-or even simpler:
+Or even simpler:
 
 ```autohotkey
 ^!q::Loop 32 {
@@ -179,36 +186,32 @@ or even simpler:
 
 <hr/>
 
-## better solutions (in the future, and reasoning).
+## 🔮 Better Solutions (In the Future, and Reasoning)
 
-There is no "close virtual-desktop" Windows API (yet).
+There is no "close virtual desktop" Windows API (yet). 🚫
 
-Microsoft documents `IVirtualDesktopManager`, a COM interface available since Windows 10.  
-It can tell you which desktop a window is on (`GetWindowDesktopId`),  
-whether a window is on the current desktop (`IsWindowOnCurrentVirtualDesktop`),  
-and even move a window to another desktop (`MoveWindowToDesktop`).  
-It is implemented by the `VirtualDesktopManager` class, created with `CoCreateInstance`.  
+Microsoft documents `IVirtualDesktopManager`, a COM interface available since Windows 10. 📚  
+It can tell you which desktop a window is on (`GetWindowDesktopId`).  
+It can tell you whether a window is on the current desktop (`IsWindowOnCurrentVirtualDesktop`).  
+It can even move a window to another desktop (`MoveWindowToDesktop`). 🪟➡️🪟  
+It is implemented by the `VirtualDesktopManager` class, created with `CoCreateInstance`.
 
-It can't create, switch, or close desktops.  
-Microsoft's guidance is that creating and manipulating desktops is reserved for the user,  
-so the documented API doesn't offer that.  
+It can't create, switch, or close desktops. 🙅  
+Microsoft's guidance is that creating and manipulating desktops is reserved for the user, so the documented API doesn't offer that. 👤
 
-Closing a desktop (currently) only works through the undocumented internal interfaces that tools like PowerToys use,  
-which Microsoft doesn't support,  
-or through the keyboard shortcut.
+Closing a desktop (currently) only works through the undocumented internal interfaces that tools like PowerToys use, which Microsoft doesn't support. ⚠️  
+Otherwise, you can use the keyboard shortcut. ⌨️
 
-- https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ivirtualdesktopmanager
-- https://learn.microsoft.com/en-us/windows/win32/shell/virtualdesktopmanager
-- https://github.com/microsoft/PowerToys/issues/6797
+- 📖 https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ivirtualdesktopmanager
+- 📖 https://learn.microsoft.com/en-us/windows/win32/shell/virtualdesktopmanager
+- 🐙 https://github.com/microsoft/PowerToys/issues/6797
 
-That's why your program simulates `Win+Ctrl+F4` with `SendInput`.  
-It's the only public "route" for closing a desktop.  
+That's why this program simulates `Win+Ctrl+F4` with `SendInput`. 🎹  
+It's the only public "route" for closing a desktop. 🛣️
 
-- feel free to open a bug/feature request.  
+- 🐛 Feel free to open a bug or feature request!
 
 <hr/>
 <br/>
 
-<a href="https://paypal.me/31adkarak0" target="_blank" rel="noopener noreferrer">
-
-
+<a href="https://paypal.me/31adkarak0" target="_blank" rel="noopener noreferrer"></a>
