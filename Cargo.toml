@@ -13,13 +13,7 @@ repository = "https://github.com/eladkarako/close_virtual_desktop_win"
 rust-version = "1.93.0"
 version = "26.11.21"
 
-
 [dependencies]
-
-
-[target.'cfg(all(target_os="windows"))'.dependencies]
-anyhow = { version = "1.0.104" }
-winapi = { version = "0.3.9", features = ["winuser", "errhandlingapi"] }
 
 [target.x86_64-pc-windows-msvc.build-dependencies]
 toml = "1.2.1"
@@ -43,4 +37,3 @@ opt-level = 3                                                       # prioritize
 panic = "unwind"                                                    # Keep unwinding so a panic in one connection task is contained and reported instead of taking down the whole proxy.
 rpath = false                                                       # Do not embed runtime library search paths which prevents runtime path issues, needed for static builds.
 strip = true                                                        # Removes all symbols from final binary minimizes its size.
-

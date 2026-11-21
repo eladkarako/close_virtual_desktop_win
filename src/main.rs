@@ -1,93 +1,58 @@
 #![cfg(windows)]
 
-use anyhow::{anyhow, bail, Result};
-use std::{mem::size_of, thread, time::Duration};
-use winapi::um::{
-    errhandlingapi::GetLastError,
-    winuser::{
-        INPUT_u, SendInput, INPUT, INPUT_KEYBOARD, KEYBDINPUT,
-        KEYEVENTF_KEYUP, VK_CONTROL, VK_F4, VK_LWIN,
-    },
-};
+mod bindings;
 
-fn main() -> Result<()> {
+use crate::bindings::{
+    key_event, send_inputs, Input, VK_CONTROL, VK_F4, VK_LWIN,
+};
+use std::{io, thread, time::Duration};
+
+const CLOSE_ATTEMPTS: u32 = 32;
+const ATTEMPT_DELAY: Duration = Duration::from_millis(100);
+
+fn main() -> io::Result<()> {
     thread::spawn(close_extra_desktops)
         .join()
-        .map_err(|_| anyhow!("cleanup thread panicked"))??;
-    Ok(())
+        .map_err(|_| io::Error::other("cleanup thread panicked"))?
 }
 
-fn close_extra_desktops() -> Result<()> {
-    for _ in 0..32 {
+fn close_extra_desktops() -> io::Result<()> {
+    for _ in 0..CLOSE_ATTEMPTS {
         send_close_desktop_shortcut()?;
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(ATTEMPT_DELAY);
     }
     Ok(())
 }
 
-fn send_close_desktop_shortcut() -> Result<()> {
-    let key_input = |key: i32, flags: u32| {
-        let mut u: INPUT_u = unsafe { std::mem::zeroed() };
+fn send_close_desktop_shortcut() -> io::Result<()> {
+    send_inputs(&close_desktop_chord()).map_err(|err| {
+        io::Error::other(format!(
+            "{err}; cleanup: {}",
+            release_held_keys()
+        ))
+    })
+}
 
-        // SAFETY: `ki_mut` selects the KEYBDINPUT variant, which is fully initialized here.
-        unsafe {
-            *u.ki_mut() = KEYBDINPUT {
-                wVk: key as u16,
-                wScan: 0,
-                dwFlags: flags,
-                time: 0,
-                dwExtraInfo: 0,
-            };
-        }
+fn close_desktop_chord() -> [Input; 6] {
+    [
+        key_event(VK_LWIN, false),
+        key_event(VK_CONTROL, false),
+        key_event(VK_F4, false),
+        key_event(VK_F4, true),
+        key_event(VK_CONTROL, true),
+        key_event(VK_LWIN, true),
+    ]
+}
 
-        INPUT {
-            type_: INPUT_KEYBOARD,
-            u,
-        }
-    };
-
-    let mut inputs = [
-        key_input(VK_LWIN, 0),
-        key_input(VK_CONTROL, 0),
-        key_input(VK_F4, 0),
-        key_input(VK_F4, KEYEVENTF_KEYUP),
-        key_input(VK_CONTROL, KEYEVENTF_KEYUP),
-        key_input(VK_LWIN, KEYEVENTF_KEYUP),
+/// Best-effort release of keys that may still be held after a partial send.
+fn release_held_keys() -> String {
+    let releases = [
+        key_event(VK_F4, true),
+        key_event(VK_CONTROL, true),
+        key_event(VK_LWIN, true),
     ];
-
-    // SAFETY: The initialized input array remains alive for the call.
-    let sent = unsafe {
-        SendInput(
-            inputs.len() as u32,
-            inputs.as_mut_ptr(),
-            size_of::<INPUT>() as i32,
-        )
-    };
-
-    if sent != inputs.len() as u32 {
-        let error = unsafe { GetLastError() };
-        let mut releases = [
-            key_input(VK_F4, KEYEVENTF_KEYUP),
-            key_input(VK_CONTROL, KEYEVENTF_KEYUP),
-            key_input(VK_LWIN, KEYEVENTF_KEYUP),
-        ];
-
-        // SAFETY: The initialized release array remains alive for the call.
-        let released = unsafe {
-            SendInput(
-                releases.len() as u32,
-                releases.as_mut_ptr(),
-                size_of::<INPUT>() as i32,
-            )
-        };
-
-        bail!(
-            "SendInput accepted {sent}/{} events (GetLastError={error}); \
-             cleanup accepted {released}/{} key releases",
-            inputs.len(),
-            releases.len(),
-        );
+    match send_inputs(&releases) {
+        Ok(()) => "all key releases accepted".to_owned(),
+        Err(err) => err.to_string(),
     }
-
-    Ok(())
 }
