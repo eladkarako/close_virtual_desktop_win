@@ -1,0 +1,45 @@
+[package]
+authors = ["Elad Karako <eladkarako@gmail.com>"]
+categories = ["command-line-utilities", "windows"]
+description = "close current desktop safely. moving running programs to another desktop. until only one desktop left. uses WIN+CTRL+F4 in interactive user session."
+documentation = "https://github.com/eladkarako/close_virtual_desktop_win#readme"
+edition = "2024"
+homepage = "https://github.com/eladkarako/close_virtual_desktop_win"
+keywords = ["windows", "virtual-desktop", "cli"]
+license = "MIT"
+name = "close_virtual_desktop_win"
+readme = "README.md"
+repository = "https://github.com/eladkarako/close_virtual_desktop_win"
+rust-version = "1.93.0"
+version = "26.11.21"
+
+
+[dependencies]
+
+
+[target.'cfg(all(target_os="windows"))'.dependencies]
+winapi = { version = "0.3", features = ["winuser"] }
+
+[target.x86_64-pc-windows-msvc.build-dependencies]
+toml = "1.2.1"
+winres = "0.1.12"
+
+[target.i686-pc-windows-msvc.build-dependencies]
+toml = "1.2.1"
+winres = "0.1.12"
+
+[target.aarch64-pc-windows-msvc.build-dependencies]
+toml = "1.2.1"
+winres = "0.1.12"
+
+
+[profile.release]
+codegen-units = 1                                                   # Single unit for better LTO optimization and smaller binary size.
+debug = false                                                       # Removes debug symbols for smaller binary.
+incremental = false                                                 # Disable incremental compilation for cleaner builds, prevents stale build artifacts in release mode.
+lto = true                                                          # Link-time optimization across compilation units, for better performances.
+opt-level = 3                                                       # prioritizes speed (loop unrolling, better branch prediction, instruction cache fit) over binary size. use value "z" (instead of 3) for optimizing size.
+panic = "unwind"                                                    # Keep unwinding so a panic in one connection task is contained and reported instead of taking down the whole proxy.
+rpath = false                                                       # Do not embed runtime library search paths which prevents runtime path issues, needed for static builds.
+strip = true                                                        # Removes all symbols from final binary minimizes its size.
+
