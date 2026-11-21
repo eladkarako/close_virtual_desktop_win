@@ -12,7 +12,7 @@ this makes <kbd>ALT</kbd>+<kbd>TAB</kbd>/<kbd>WIN</kbd>+<kbd>TAB</kbd> laggy.
 
 ## other, semi-working "tricks" I've tried..
 
-- keep the virtual-desktop button in the taskbar always, and check from time to time (takes up space).
+- keep the virtual-desktop button ("taskview") in the taskbar always, and check from time to time (takes up space).
 
 - try to disable it - registry (does nothing)
 
