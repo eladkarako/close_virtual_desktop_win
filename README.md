@@ -1,6 +1,6 @@
 # close_virtual_desktop_win
 
-<img src="resources/app.png" />
+<img src="resources/logos/app.png" />
 
 ## problem
 
@@ -47,7 +47,7 @@ Windows Registry Editor Version 5.00
 
 - install a newer windows build just to have somewhat more control over the key combination (not really did much).
 
-<img src="resources/screenshot_system_multitasking.png" />
+<img src="resources/logos/screenshot_system_multitasking.png" />
 
 <hr/>
 
