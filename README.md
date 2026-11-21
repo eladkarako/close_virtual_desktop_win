@@ -9,8 +9,6 @@
 - [![](resources/logos/64.png) ![](resources/logos/windows.png) x86_64-pc-windows-msvc.zip](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/x86_64-pc-windows-msvc.zip)
 - [![](resources/logos/aarch64.png) ![](resources/logos/windows.png) aarch64-pc-windows-msvc.zip](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/aarch64-pc-windows-msvc.zip)
 - [![](resources/logos/32.png) ![](resources/logos/windows.png) i686-pc-windows-msvc.zip](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/i686-pc-windows-msvc.zip)
-
-### other
 - [![](resources/logos/txt.png) version.txt](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/version.txt)
 - [![](resources/logos/txt.png) changelog.txt](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/changelog.txt)
 
