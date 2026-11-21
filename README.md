@@ -2,11 +2,29 @@
 
 <img src="resources/logos/app.png" />
 
+<hr/>
+
 ## problem
 
 I tend to open multiple virtual-desktops by mistake.  
 opened apps are kept in another desktop, and I eventually open another copy.  
 this makes <kbd>ALT</kbd>+<kbd>TAB</kbd>/<kbd>WIN</kbd>+<kbd>TAB</kbd> laggy.  
+
+<hr/>
+
+# what this program does.
+
+<img src="resources/logos/screenshot_how_it_works.gif" />
+
+it sends a key-combination (<kbd>WIN</kbd>+<kbd>CTRL</kbd>+<kbd>F4</kbd>) 32 times,  
+it closes whatever desktop you are in, safely,  
+moving all opened programs to a previously opened desktop.  
+it does nothing if you are only having one desktop.  
+
+you can run it manually,  
+or as a scheduled-task.  
+
+but it must be as part of user interactive session (logged-in).
 
 <hr/>
 
@@ -102,20 +120,6 @@ SetWorkingDir    A_ScriptDir  ; set working folder to be the script's folder.
 ;https://eladkarako.github.io/docs_autohotkey_v2/docs/misc/CLSID-List.htm
 ;https://eladkarako.github.io/docs_autohotkey_v2/docs/lib/HotIf.htm#IfWin
 ```
-
-<hr/>
-
-# what this program does.
-
-it sends a key-combination (<kbd>WIN</kbd>+<kbd>CTRL</kbd>+<kbd>F4</kbd>) 32 times,  
-it closes whatever desktop you are in, safely,  
-moving all opened programs to a previously opened desktop.  
-it does nothing if you are only having one desktop.  
-
-you can run it manually,  
-or as a scheduled-task.  
-
-but it must be as part of user interactive session (logged-in).
 
 <hr/>
 
