@@ -18,7 +18,8 @@ version = "26.11.21"
 
 
 [target.'cfg(all(target_os="windows"))'.dependencies]
-winapi = { version = "0.3", features = ["winuser"] }
+anyhow = { version = "1.0.104" }
+winapi = { version = "0.3.9", features = ["winuser", "errhandlingapi"] }
 
 [target.x86_64-pc-windows-msvc.build-dependencies]
 toml = "1.2.1"
