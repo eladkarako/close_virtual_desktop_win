@@ -3,11 +3,15 @@
 mod bindings;
 
 use crate::bindings::{
-    key_event, send_inputs, Input, VK_CONTROL, VK_F4, VK_LWIN,
+    keys::{
+        key_event, send_inputs, Input, VK_CONTROL, VK_F4, VK_LWIN,
+    },
+    registry::RegistryKey,
 };
+
 use std::{io, thread, time::Duration};
 
-const CLOSE_ATTEMPTS: u32 = 32;
+const GUID_SIZE: usize = 16;
 const ATTEMPT_DELAY: Duration = Duration::from_millis(100);
 
 fn main() -> io::Result<()> {
@@ -17,11 +21,23 @@ fn main() -> io::Result<()> {
 }
 
 fn close_extra_desktops() -> io::Result<()> {
-    for _ in 0..CLOSE_ATTEMPTS {
+    let attempts = desktop_count()?.saturating_sub(1);
+    for _ in 0..attempts {
         send_close_desktop_shortcut()?;
         thread::sleep(ATTEMPT_DELAY);
     }
     Ok(())
+}
+
+fn desktop_count() -> io::Result<usize> {
+    let Some(key) = RegistryKey::open_current_user(
+        r"Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops",
+    )?
+    else {
+        return Ok(1);
+    };
+    let ids = key.read_binary("VirtualDesktopIDs")?;
+    Ok((ids.len() / GUID_SIZE).max(1))
 }
 
 fn send_close_desktop_shortcut() -> io::Result<()> {
@@ -44,7 +60,6 @@ fn close_desktop_chord() -> [Input; 6] {
     ]
 }
 
-/// Best-effort release of keys that may still be held after a partial send.
 fn release_held_keys() -> String {
     let releases = [
         key_event(VK_F4, true),
