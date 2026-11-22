@@ -1,18 +1,13 @@
 #![cfg(windows)]
 
-//! Minimal, dependency-free Win32 bindings for keyboard input.
-//! Raw FFI lives here; everything callers touch is safe.
-
-use std::{io, mem::size_of};
+use anyhow::{ensure, Context, Result};
+use std::mem::size_of;
 
 pub const INPUT_KEYBOARD: u32 = 1;
-
 pub const KEYEVENTF_KEYUP: u32 = 0x0002;
 
 pub const VK_CONTROL: u16 = 0x11;
-
 pub const VK_F4: u16 = 0x73;
-
 pub const VK_LWIN: u16 = 0x5B;
 
 #[repr(C)]
@@ -59,14 +54,9 @@ pub struct Input {
     pub data: InputUnion,
 }
 
-// Guards against layout mistakes: INPUT is 40 bytes on x64 and 28 bytes on x86.
+// INPUT is 40 bytes on 64-bit Windows and 28 bytes on 32-bit Windows.
 const _: () = assert!(
-    size_of::<Input>()
-        == if cfg!(target_pointer_width = "64") {
-        40
-    } else {
-        28
-    }
+    size_of::<Input>() == if cfg!(target_pointer_width = "64") { 40 } else { 28 }
 );
 
 #[link(name = "user32")]
@@ -80,11 +70,9 @@ unsafe extern "system" {
 }
 
 /// Builds a keyboard event for a virtual key, either press or release.
-pub fn key_event(
-    vk: u16,
-    released: bool,
-) -> Input {
+pub fn key_event(vk: u16, released: bool) -> Input {
     let dw_flags = if released { KEYEVENTF_KEYUP } else { 0 };
+
     Input {
         r#type: INPUT_KEYBOARD,
         data: InputUnion {
@@ -101,22 +89,23 @@ pub fn key_event(
 
 /// Sends all events in one `SendInput` call.
 /// Returns an error if the OS accepted fewer events than were supplied.
-pub fn send_inputs(inputs: &[Input]) -> io::Result<()> {
-    let count =
-        u32::try_from(inputs.len()).map_err(io::Error::other)?;
-    let cb_size = i32::try_from(size_of::<Input>())
-        .map_err(io::Error::other)?;
+pub fn send_inputs(inputs: &[Input]) -> Result<()> {
+    ensure!(!inputs.is_empty(), "refusing to send an empty input batch");
 
-    // SAFETY: the pointer and count describe a live slice of `Input`,
-    // and `cb_size` is exactly `size_of::<Input>()`.
-    let sent =
-        unsafe { send_input(count, inputs.as_ptr(), cb_size) };
+    let count = u32::try_from(inputs.len())
+        .context("input batch is too large for SendInput")?;
+    let input_size = i32::try_from(size_of::<Input>())
+        .context("INPUT structure size does not fit in SendInput's parameter")?;
 
-    if sent == count {
-        return Ok(());
-    }
-    let os_error = io::Error::last_os_error();
-    Err(io::Error::other(format!(
-        "SendInput accepted {sent}/{count} events ({os_error})"
-    )))
+    // SAFETY: `inputs` points to `count` initialized INPUT-compatible values,
+    // and `input_size` is the size of the Rust representation above.
+    let sent = unsafe { send_input(count, inputs.as_ptr(), input_size) };
+
+    ensure!(
+        sent == count,
+        "SendInput accepted {sent} of {count} events: {}",
+        std::io::Error::last_os_error()
+    );
+
+    Ok(())
 }

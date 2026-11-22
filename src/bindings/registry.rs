@@ -1,12 +1,18 @@
 #![cfg(windows)]
 
-use std::{ffi::c_void, io, ptr};
+use anyhow::{ensure, Context, Result};
+use std::{
+    ffi::c_void,
+    io,
+    ptr,
+};
 
 pub type Hkey = *mut c_void;
 
 const ERROR_SUCCESS: i32 = 0;
 const ERROR_FILE_NOT_FOUND: i32 = 2;
 const ERROR_MORE_DATA: i32 = 234;
+
 const KEY_READ: u32 = 0x0002_0019;
 const REG_BINARY: u32 = 3;
 
@@ -40,21 +46,19 @@ fn hkey_current_user() -> Hkey {
 }
 
 fn wide(text: &str) -> Vec<u16> {
-    text.encode_utf16()
-        .chain(std::iter::once(0))
-        .collect()
+    text.encode_utf16().chain(std::iter::once(0)).collect()
 }
 
-/// Owns an open registry key and closes it when dropped.
 pub struct RegistryKey(Hkey);
 
 impl RegistryKey {
     /// Opens a key under HKEY_CURRENT_USER. Returns `None` if the key does not exist.
-    pub fn open_current_user(
-        sub_key: &str
-    ) -> io::Result<Option<Self>> {
+    pub fn open_current_user(sub_key: &str) -> Result<Option<Self>> {
         let sub_key = wide(sub_key);
         let mut handle: Hkey = ptr::null_mut();
+
+        // SAFETY: `sub_key` is null-terminated and `handle` is a valid output
+        // pointer. The returned handle is wrapped and closed by `Drop`.
         let status = unsafe {
             reg_open_key_ex_w(
                 hkey_current_user(),
@@ -64,24 +68,30 @@ impl RegistryKey {
                 &mut handle,
             )
         };
+
         match status {
-            ERROR_SUCCESS => Ok(Some(Self(handle))),
+            ERROR_SUCCESS => {
+                ensure!(!handle.is_null(), "registry returned a null key handle");
+                Ok(Some(Self(handle)))
+            }
             ERROR_FILE_NOT_FOUND => Ok(None),
-            _ => Err(io::Error::from_raw_os_error(status)),
+            code => Err(io::Error::from_raw_os_error(code))
+                .context("RegOpenKeyExW failed"),
         }
     }
 
     /// Reads a REG_BINARY value. Returns an empty vector if the value does not exist.
-    pub fn read_binary(
-        &self,
-        name: &str,
-    ) -> io::Result<Vec<u8>> {
+    pub fn read_binary(&self, name: &str) -> Result<Vec<u8>> {
         let name = wide(name);
         let mut buffer = vec![0_u8; 1024];
+
         loop {
             let mut size = u32::try_from(buffer.len())
-                .map_err(io::Error::other)?;
+                .context("registry buffer size exceeds the Windows API limit")?;
             let mut kind = 0_u32;
+
+            // SAFETY: `name` is null-terminated; `buffer` is writable for the
+            // supplied size; and `self.0` is a live registry handle.
             let status = unsafe {
                 reg_query_value_ex_w(
                     self.0,
@@ -92,20 +102,34 @@ impl RegistryKey {
                     &mut size,
                 )
             };
+
             match status {
                 ERROR_SUCCESS => {
-                    if kind != REG_BINARY {
-                        return Err(io::Error::other(
-                            "registry value is not REG_BINARY",
-                        ));
-                    }
+                    ensure!(
+                        kind == REG_BINARY,
+                        "registry value is not REG_BINARY (type {kind})"
+                    );
+                    ensure!(
+                        size as usize <= buffer.len(),
+                        "registry returned a size larger than the supplied buffer"
+                    );
+
                     buffer.truncate(size as usize);
                     return Ok(buffer);
                 }
-                ERROR_MORE_DATA => buffer.resize(size as usize, 0),
-                ERROR_FILE_NOT_FOUND => return Ok(Vec::new()),
-                _ => {
-                    return Err(io::Error::from_raw_os_error(status));
+                ERROR_MORE_DATA => {
+                    ensure!(
+                        size as usize > buffer.len(),
+                        "registry requested a non-growing buffer after ERROR_MORE_DATA"
+                    );
+                    buffer.resize(size as usize, 0);
+                }
+                ERROR_FILE_NOT_FOUND => {
+                    anyhow::bail!("registry value does not exist");
+                }
+                code => {
+                    return Err(io::Error::from_raw_os_error(code))
+                        .context("RegQueryValueExW failed");
                 }
             }
         }
@@ -114,6 +138,10 @@ impl RegistryKey {
 
 impl Drop for RegistryKey {
     fn drop(&mut self) {
-        unsafe { reg_close_key(self.0) };
+        if !self.0.is_null() {
+            // SAFETY: This handle was successfully returned by RegOpenKeyExW
+            // and is closed exactly once here.
+            let _ = unsafe { reg_close_key(self.0) };
+        }
     }
 }

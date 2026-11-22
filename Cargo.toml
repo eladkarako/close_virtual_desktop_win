@@ -15,6 +15,10 @@ version = "26.11.22"
 
 [dependencies]
 
+[target.'cfg(all(target_os="windows"))'.dependencies]
+anyhow = { version = "1.0.104" }
+clap = { version = "4.6.9", default-features = false, features = ["derive", "std", "help"] }
+
 [target.x86_64-pc-windows-msvc.build-dependencies]
 toml = "1.2.1"
 winres = "0.1.12"

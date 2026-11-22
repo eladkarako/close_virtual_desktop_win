@@ -6,6 +6,13 @@ and all the opened applications and windows in it (same position).
 
 <img src="resources/logos/app.png" />
 
+```
+close_virtual_desktop_win.exe
+close_virtual_desktop_win.exe --sleep-timeout 250
+close_virtual_desktop_win.exe --force-number 3
+close_virtual_desktop_win.exe --force-number 3 --sleep-timeout 30
+```
+
 ## 👇  download (direct URLs - latest release)
 
 - [![](resources/logos/64.png)![](resources/logos/windows.png)x86_64-pc-windows-msvc.zip](https://github.com/eladkarako/close_virtual_desktop_win/releases/latest/download/x86_64-pc-windows-msvc.zip)
