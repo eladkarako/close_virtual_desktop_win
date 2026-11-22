@@ -4,19 +4,15 @@ mod bindings;
 
 use anyhow::{ensure, Context, Result};
 use bindings::{
-    keys::{
-        key_event, send_inputs, VK_CONTROL, VK_F4, VK_LWIN,
-    },
+    keys::{key_event, send_inputs, VK_CONTROL, VK_F4, VK_LWIN},
     registry::RegistryKey,
 };
 use clap::Parser;
-use std::{
-    thread,
-    time::Duration,
-};
+use std::{thread, time::Duration};
 
 const GUID_SIZE: usize = 16;
 const FALLBACK_ATTEMPTS: usize = 32;
+const MIN_SLEEP_TIMEOUT_MS: u64 = 10;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -24,12 +20,11 @@ const FALLBACK_ATTEMPTS: usize = 32;
     about = "Close virtual desktops using Win+Ctrl+F4."
 )]
 struct Args {
-    /// Delay between shortcut attempts, in milliseconds (10 minimum).
-    #[arg(long, default_value_t = 100, value_parser = clap::value_parser!(u64).range(10..)
-    )]
+    /// Delay between shortcut attempts, in milliseconds (minimum: 10).
+    #[arg(long, default_value_t = 100)]
     sleep_timeout: u64,
 
-    /// Send the keys this many times without checking the registry for how much actual desktops are used (range 1-256, no default).
+    /// Send the shortcut this many times without checking the registry.
     #[arg(long, value_parser = clap::value_parser!(u16).range(1..=256)
     )]
     force_number: Option<u16>,
@@ -38,31 +33,62 @@ struct Args {
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    run(args).context("virtual-desktop cleanup failed")
+    thread::Builder::new()
+        .name("virtual-desktop-cleanup".to_owned())
+        .spawn(move || run(args))
+        .context("could not start the cleanup thread")?
+        .join()
+        .map_err(|_| anyhow::anyhow!("cleanup thread panicked"))?
+        .context("virtual-desktop cleanup failed")
 }
 
 fn run(args: Args) -> Result<()> {
-    let attempts = match args.force_number {
-        Some(number) => usize::from(number),
-        None => match attempts_from_registry() {
-            Ok(attempts) => attempts,
+    let effective_timeout = args
+        .sleep_timeout
+        .max(MIN_SLEEP_TIMEOUT_MS);
+
+    let (desktop_count, attempts, attempt_source) = match args
+        .force_number
+    {
+        Some(number) => (None, usize::from(number), "force-number"),
+        None => match desktop_count_from_registry() {
+            Ok(count) => {
+                (Some(count), count.saturating_sub(1), "registry")
+            }
             Err(error) => {
                 eprintln!(
                     "Could not determine the desktop count from the registry: \
                      {error:#}. Falling back to {FALLBACK_ATTEMPTS} shortcut attempts."
                 );
-                FALLBACK_ATTEMPTS
+                (None, FALLBACK_ATTEMPTS, "fallback")
             }
         },
     };
 
-    let delay = Duration::from_millis(args.sleep_timeout);
+    println!("Arguments: {args:?}");
+    match desktop_count {
+        Some(count) => println!("Desktop count: {count}"),
+        None => println!("Desktop count: unavailable"),
+    }
+    println!("Attempt source: {attempt_source}");
+    println!("Shortcut attempts: {attempts}");
+    println!(
+        "Sleep timeout: requested {} ms, effective {} ms",
+        args.sleep_timeout, effective_timeout
+    );
+
+    let delay = Duration::from_millis(effective_timeout);
 
     for attempt in 1..=attempts {
-        send_close_desktop_shortcut()
-            .with_context(|| format!("failed on shortcut attempt {attempt} of {attempts}"))?;
+        println!("Sending shortcut {attempt}/{attempts}");
 
-        if attempt < attempts && !delay.is_zero() {
+        send_close_desktop_shortcut().with_context(|| {
+            format!(
+                "failed on shortcut attempt {attempt} of {attempts}"
+            )
+        })?;
+
+        if attempt < attempts {
             thread::sleep(delay);
         }
     }
@@ -70,12 +96,7 @@ fn run(args: Args) -> Result<()> {
     Ok(())
 }
 
-/// Returns the number of shortcut attempts needed to leave one desktop.
-///
-/// The registry value contains desktop IDs, so the number of attempts is the
-/// number of IDs minus one. An absent key, absent value, or malformed value is
-/// an error; the caller handles it by using the fallback count.
-fn attempts_from_registry() -> Result<usize> {
+fn desktop_count_from_registry() -> Result<usize> {
     let key = RegistryKey::open_current_user(
         r"Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops",
     )
@@ -84,7 +105,9 @@ fn attempts_from_registry() -> Result<usize> {
 
     let ids = key
         .read_binary("VirtualDesktopIDs")
-        .context("could not read the VirtualDesktopIDs registry value")?;
+        .context(
+            "could not read the VirtualDesktopIDs registry value",
+        )?;
 
     ensure!(
         !ids.is_empty(),
@@ -96,10 +119,10 @@ fn attempts_from_registry() -> Result<usize> {
         ids.len()
     );
 
-    let desktop_count = ids.len() / GUID_SIZE;
-    ensure!(desktop_count > 0, "the registry reported no virtual desktops");
+    let count = ids.len() / GUID_SIZE;
+    ensure!(count > 0, "the registry reported no virtual desktops");
 
-    Ok(desktop_count.saturating_sub(1))
+    Ok(count)
 }
 
 fn send_close_desktop_shortcut() -> Result<()> {
@@ -113,9 +136,7 @@ fn send_close_desktop_shortcut() -> Result<()> {
     ];
 
     if let Err(send_error) = send_inputs(&chord) {
-        let release_result = release_held_keys();
-
-        return match release_result {
+        return match release_held_keys() {
             Ok(()) => Err(send_error)
                 .context("SendInput failed; attempted to release all shortcut keys"),
             Err(release_error) => Err(send_error).context(format!(
@@ -135,5 +156,6 @@ fn release_held_keys() -> Result<()> {
         key_event(VK_LWIN, true),
     ];
 
-    send_inputs(&releases).context("could not release one or more shortcut keys")
+    send_inputs(&releases)
+        .context("could not release one or more shortcut keys")
 }

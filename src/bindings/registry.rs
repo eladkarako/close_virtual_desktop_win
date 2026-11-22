@@ -1,11 +1,7 @@
 #![cfg(windows)]
 
 use anyhow::{ensure, Context, Result};
-use std::{
-    ffi::c_void,
-    io,
-    ptr,
-};
+use std::{ffi::c_void, io, ptr};
 
 pub type Hkey = *mut c_void;
 
@@ -46,7 +42,9 @@ fn hkey_current_user() -> Hkey {
 }
 
 fn wide(text: &str) -> Vec<u16> {
-    text.encode_utf16().chain(std::iter::once(0)).collect()
+    text.encode_utf16()
+        .chain(std::iter::once(0))
+        .collect()
 }
 
 pub struct RegistryKey(Hkey);
@@ -71,7 +69,10 @@ impl RegistryKey {
 
         match status {
             ERROR_SUCCESS => {
-                ensure!(!handle.is_null(), "registry returned a null key handle");
+                ensure!(
+                    !handle.is_null(),
+                    "registry returned a null key handle"
+                );
                 Ok(Some(Self(handle)))
             }
             ERROR_FILE_NOT_FOUND => Ok(None),
@@ -81,13 +82,17 @@ impl RegistryKey {
     }
 
     /// Reads a REG_BINARY value. Returns an empty vector if the value does not exist.
-    pub fn read_binary(&self, name: &str) -> Result<Vec<u8>> {
+    pub fn read_binary(
+        &self,
+        name: &str,
+    ) -> Result<Vec<u8>> {
         let name = wide(name);
         let mut buffer = vec![0_u8; 1024];
 
         loop {
-            let mut size = u32::try_from(buffer.len())
-                .context("registry buffer size exceeds the Windows API limit")?;
+            let mut size = u32::try_from(buffer.len()).context(
+                "registry buffer size exceeds the Windows API limit",
+            )?;
             let mut kind = 0_u32;
 
             // SAFETY: `name` is null-terminated; `buffer` is writable for the
