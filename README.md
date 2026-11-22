@@ -242,5 +242,8 @@ It's the only public "route" for closing a desktop. 🛣️
 
 <hr/>
 <br/>
+<br/>
+<br/>
 
-<a href="https://paypal.me/31adkarak0" target="_blank" rel="noopener noreferrer"></a>
+https://paypal.me/31adkarak0
+
