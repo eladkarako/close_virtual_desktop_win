@@ -1,6 +1,10 @@
 26.11.22
 * removing dependencies - `anyhow` and `winapi`, with raw API in `bindings.rs`, in the 2024 Rust-standard that includes `#[link_name = "SendInput"]` . this is generic enough to be used for other things. it matches pretty much the previous `anyhow` handling, and has properly release of the key events on error.
 * reduces the sleep between the x32 keypress-keyrelease-sleep from 200milliseconds to 100milliseconds.
+* read from registry the amount of virtual-desktops, it makes the program perform the bare-minimum of action, and end very fast.
+* some useful information output to console.
+* argument handling allowing override the amount of times to run (skips the registry check for amount of desktops, and sleep timeout).
+* improve error hendling (anyhow is back).
 
 26.11.21
 + initial. `keybd_event` (https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-keybd_event) in main thread, x32 times (press and release) with 80milliseconds sleep, close all desktops safely leaving just one, moving all opened-apps to the one desktop.

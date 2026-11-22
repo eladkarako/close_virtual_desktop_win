@@ -6,12 +6,7 @@ and all the opened applications and windows in it (same position).
 
 <img src="resources/logos/app.png" />
 
-```
-close_virtual_desktop_win.exe
-close_virtual_desktop_win.exe --sleep-timeout 250
-close_virtual_desktop_win.exe --force-number 3
-close_virtual_desktop_win.exe --force-number 3 --sleep-timeout 30
-```
+<hr/>
 
 ## 👇  download (direct URLs - latest release)
 
@@ -33,16 +28,58 @@ This makes <kbd>ALT</kbd>+<kbd>TAB</kbd> / <kbd>WIN</kbd>+<kbd>TAB</kbd> laggy. 
 
 ### ✨ What This Program Does
 
-gradually (but very fast) it sends the hot-key combination to close the current virtual-desktop  
-(<kbd>WIN</kbd>+<kbd>CTRL</kbd>+<kbd>F4</kbd>) it does so blindly to the actual amount of opened virtual-desktops you currently have,  
-it is safe since it does nothing if you're only have one desktop left.  
+gradually (but very fast), it sends the hot-key combination (<kbd>WIN</kbd>+<kbd>CTRL</kbd>+<kbd>F4</kbd>)  
+to close the current virtual-desktop.  
+
+it query the `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops`,  
+`VirtualDesktopIDs` binary data, splitting it by `16` to get the actual number of the current number of opened desktops.
+
+<details><summary><h4>usage</h4></summary>
+
+```
+Options:
+      --sleep-timeout <SLEEP_TIMEOUT>  Delay between shortcut attempts, in milliseconds (minimum: 10) [default: 100]
+      --force-number <FORCE_NUMBER>    Send the shortcut this many times without checking the registry
+  -h, --help                           Print help
+  -V, --version                        Print version
+
+
+close_virtual_desktop_win.exe --sleep-timeout 250
+close_virtual_desktop_win.exe --force-number 3
+close_virtual_desktop_win.exe --force-number 3 --sleep-timeout 30
+```
+
+<hr/>
+
+simplest is this:  
+
+- `close_virtual_desktop_win.exe` (for example, current user has 2 desktops opened):
+
+```txt
+Arguments: Args { sleep_timeout: 100, force_number: None }
+Desktop count: 2
+Attempt source: registry
+Shortcut attempts: 1
+Sleep timeout: requested 100 ms, effective 100 ms
+Sending shortcut 1/1
+```
+
+- `close_virtual_desktop_win.exe` (for example, current user has only 1 desktop opened):
+
+```txt
+Arguments: Args { sleep_timeout: 100, force_number: None }
+Desktop count: 1
+Attempt source: registry
+Shortcut attempts: 0
+Sleep timeout: requested 100 ms, effective 100 ms
+```
+
+it means the program won't bother even sending one hot-key combination.
+</details>
 
 Windows itself handles everything. it moves all the windows and opened applications to the next recently opened desktop,  
 and closes the virtual-desktop. repeating this will eventually leave you with only one desktop,  
 and all you opened programs and windows, in same place.
-
-I've currently hard-coded 32 actions,  
-so if you have more opened virtual-desktops you need to re-run the program.
 
 <img src="resources/logos/screenshot_how_it_works.gif" />
 
@@ -150,22 +187,7 @@ SetWorkingDir    A_ScriptDir  ; set working folder to be the script's folder.
 
 <hr/>
 
-## 🐢 Slowness
-
-You'll see the immediate result, most likely right away. ⚡  
-However, the program still waits until all 32 key events finish, which takes about ~6 seconds. ⏳  
-If you have more than 32 desktops, you can re-run the tool. 🔁
-
-- ➕ `Win + Ctrl + D`: create a new desktop.
-- ❌ `Win + Ctrl + F4`: close the current desktop.
-- ◀️▶️ `Win + Ctrl + ←/→`: cycle desktops.
-- 🔀 `Alt + Tab` / `Win + Tab`: surf apps across all desktops (configurable).
-
-💡 Note: As far as I can tell, extra virtual desktops by themselves are not the cause of low RAM or CPU spikes. The cause is often when you "lose" an application in another desktop 👻
-
-<hr/>
-
-## 🛠️ Alternative
+## 🛠️ Alternative (32 runs)
 
 If you want, you can use `autohotkey` instead of this program. You can even "compile" it to an `.exe` 📦.
 

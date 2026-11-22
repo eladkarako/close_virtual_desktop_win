@@ -15,9 +15,12 @@ const FALLBACK_ATTEMPTS: usize = 32;
 const MIN_SLEEP_TIMEOUT_MS: u64 = 10;
 
 #[derive(Debug, Parser)]
+#[command(name = env!("CARGO_PKG_NAME"))]
+#[command(version = env!("CARGO_PKG_VERSION"))]
+#[command(author = env!("CARGO_PKG_AUTHORS"))]
+#[command(about = env!("CARGO_PKG_DESCRIPTION"), long_about = None)]
 #[command(
-    version,
-    about = "Close virtual desktops using Win+Ctrl+F4."
+    after_help = concat!("Repository:    ", env!("CARGO_PKG_REPOSITORY"), "\n", "Homepage:      ", env!("CARGO_PKG_HOMEPAGE"))
 )]
 struct Args {
     /// Delay between shortcut attempts, in milliseconds (minimum: 10).
