@@ -242,10 +242,42 @@ Otherwise, you can use the keyboard shortcut. ⌨️
 That's why this program simulates `Win+Ctrl+F4` with `SendInput`. 🎹  
 It's the only public "route" for closing a desktop. 🛣️
 
-- 🐛 Feel free to open a bug or feature request!
+<hr/>
+
+#### scheduled-task
+1. put `close_virtual_desktop_win.exe` somewhere.
+2. `"C:\WINDOWS\system32\mmc.exe" "C:\WINDOWS\system32\taskschd.msc" /s`
+3. create new task, name `background - close_virtual_desktop_win`
+4. fill-in description, so you won't forget what it does, for example: `run `close_virtual_desktop_win.exe` which causes virtual-desktops to move all the running applications and windows to single desktop and close any other virtual-desktop, helps if you keep opening virtual-desktops by mistake using WIN+*+D key-combination (I have a autohotkey script that opens another desktop folder from home-network)`.
+5. make sure it only runs as logged-in user.
+6. it doesn't need highest privileges.
+7. set it to run as hidden so you won't see console pop-ups when it runs.
+8. use newer format of windows 10.
+9. trigger is limited to when you don't use your computer, "on idle", repeating every 3 hours, stopping previous task if it runs for more than 2 minutes without stopping, you can keep the duration of 1 day.
+10. I also add few daily "on schedule", delaying 30 minutes, repeat every 3 hours, stopping previous runs, stopping if task takes longer than 3 minutes to finish. 
+11. in "action" tab you browse where you've put `close_virtual_desktop_win.exe` .
+12. in "conditions" you specify the idle time in my case 1 hour idle, without stopping if the idle state changed. and running regardless if the computer is on AC or battery.
+13. finally allow the task to run on command (to check it), stop if it runs for more than 1 hour, and if two tasks should starts at the same time avoid running.
+
+that's it, it should handle all the virtual-desktop while still not bothering you with pop-up windows,  
+as the newer versions of `close_virtual_desktop_win.exe` also know the amount of virtual-desktops, if you have just one desktop,  
+they will close asap anyway.
+
+<img src="resources/logos/scheduled_task_1.png" /><br/>
+<img src="resources/logos/scheduled_task_2.png" /><br/>
+<img src="resources/logos/scheduled_task_3.png" /><br/>
+<img src="resources/logos/scheduled_task_4.png" /><br/>
+<img src="resources/logos/scheduled_task_5.png" /><br/>
+<img src="resources/logos/scheduled_task_6.png" /><br/>
+<img src="resources/logos/scheduled_task_7.png" /><br/>
 
 <hr/>
+
+
+- 🐛 Feel free to open a bug or feature request!
+
 <br/>
+<hr/>
 <br/>
 <br/>
 
