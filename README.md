@@ -34,6 +34,10 @@ to close the current virtual-desktop.
 it query the `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VirtualDesktops`,  
 `VirtualDesktopIDs` binary data, splitting it by `16` to get the actual number of the current number of opened desktops.
 
+<img src="resources/logos/registry_total_calculation.png" />
+
+<hr/>
+
 <details><summary><h4>usage</h4></summary>
 
 ```
